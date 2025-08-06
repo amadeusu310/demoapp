@@ -104,6 +104,18 @@ export default function Login() {
             </button>
           </form>
 
+          <div>
+        <div className="title">
+          初めてですか？
+        </div>
+        <Link
+            to="/account-register"
+            className="inline-block bg-blue-600 text-white no-underline px-6 py-3 text-base rounded cursor-pointer transition-colors duration-200 hover:bg-blue-800"
+          >
+            <button type="button">新規登録</button>
+        </Link>
+      </div>
+
           {/* テストアカウント情報 */}
           <div className="mt-6 p-4 bg-gray-50 rounded-md">
             <h3 className="text-sm font-medium text-gray-700 mb-2">テストアカウント:</h3>
