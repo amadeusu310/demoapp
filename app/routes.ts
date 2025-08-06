@@ -9,4 +9,6 @@ export default [
   route("/project/:id", "routes/project.$id.tsx"),
   route("/project/:id/add-task", "routes/project.$id.add-task.tsx"),
   route("/test-supabase", "routes/test-supabase.tsx"),
+  route("/account-register", "routes/account-register.tsx"),
+  route("/calender", "routes/calender.tsx")
 ] satisfies RouteConfig;
