@@ -19,30 +19,56 @@ export default function ProjectDetail() {
   const [project, setProject] = useState<any>(null);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [hasAccess, setHasAccess] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [accessChecked, setAccessChecked] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
-      const user = await getCurrentUser();
-      if (!user) {
-        navigate('/login');
-        return;
-      }
-      setCurrentUser(user);
+      try {
+        setLoading(true);
+        console.log('プロジェクト詳細ページのデータ読み込み開始...');
+        
+        const user = await getCurrentUser();
+        console.log('現在のユーザー:', user);
+        if (!user) {
+          console.log('ユーザーがログインしていません。ログイン画面にリダイレクトします。');
+          navigate('/login');
+          return;
+        }
+        setCurrentUser(user);
 
-      const projectData = await getProjectById(id || "");
-      if (!projectData) {
-        setProject(null);
-        return;
-      }
+        console.log('プロジェクトデータを取得中...', id);
+        const projectData = await getProjectById(id || "");
+        console.log('取得したプロジェクトデータ:', projectData);
+        
+        if (!projectData) {
+          console.log('プロジェクトが見つかりません');
+          setProject(null);
+          setAccessChecked(true);
+          return;
+        }
 
-      // アクセス権限チェック：参加者リストに含まれているか確認
-      const userHasAccess = projectData.participants.includes(user.username);
-      setHasAccess(userHasAccess);
-      
-      if (userHasAccess) {
-        // プロジェクトのタスクを取得
-        const tasks = await getTasksByProjectId(projectData.id);
-        setProject({ ...projectData, tasks: tasks || [] });
+        // アクセス権限チェック：参加者リストに含まれているか確認
+        const userHasAccess = projectData.participants.includes(user.username);
+        console.log('アクセス権限チェック:', userHasAccess, 'ユーザー:', user.username, '参加者:', projectData.participants);
+        setHasAccess(userHasAccess);
+        setAccessChecked(true);
+        
+        if (userHasAccess) {
+          // プロジェクトのタスクを取得
+          console.log('タスクを取得中...');
+          const tasks = await getTasksByProjectId(projectData.id);
+          console.log('取得したタスク:', tasks);
+          setProject({ ...projectData, tasks: tasks || [] });
+        } else {
+          console.log('アクセス権限がありません');
+          setProject(projectData); // プロジェクトデータは設定するが、タスクは取得しない
+        }
+      } catch (error) {
+        console.error('プロジェクト詳細データの読み込みに失敗しました:', error);
+        setAccessChecked(true);
+      } finally {
+        setLoading(false);
       }
     };
     
@@ -71,11 +97,28 @@ export default function ProjectDetail() {
     }
   };
 
+  // ローディング中の表示
+  if (loading) {
+    return (
+      <div className="flex flex-col h-screen bg-green-50">
+        <Header />
+        <main className="flex-grow flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500 mx-auto"></div>
+            <p className="mt-4 text-gray-600">プロジェクトを読み込み中...</p>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
   if (!currentUser) {
     return <div>Loading...</div>;
   }
 
-  if (!project && !hasAccess) {
+  // アクセス権限チェック後の処理
+  if (accessChecked && !hasAccess) {
     return (
       <div className="flex flex-col h-screen bg-green-50">
         <Header />
