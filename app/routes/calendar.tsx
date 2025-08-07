@@ -1,5 +1,8 @@
 import { Link } from "react-router";
-import type { Route } from "./+types/calender";
+import type { Route } from "./+types/calendar";
+import Header from "~/components/Header";
+import Footer from "~/components/Footer";
+import { getCurrentUser } from "~/utils/supabaseClient";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -8,3 +11,6 @@ export function meta({}: Route.MetaArgs) {
   ];
 }
 
+export default function calendar(){
+  
+}
