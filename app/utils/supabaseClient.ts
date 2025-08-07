@@ -9,6 +9,25 @@ const delay = (ms: number = 50): Promise<void> => {
   return new Promise(resolve => setTimeout(resolve, ms));
 };
 
+// ユーザー(アカウント)登録
+export async function registerAccount(
+  username: string,
+  hashedPassword: string,
+  iconUrl: string
+): Promise<User | null> {
+  const {data, error} = await supabase
+    .from("users")
+    .insert([{ username, password: hashedPassword, icon_url: iconUrl }])
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Error registering account:", error);
+    return null;
+  }
+  return data;
+}
+
 // ユーザー管理
 export async function getUsers(): Promise<User[]> {
   await delay();
