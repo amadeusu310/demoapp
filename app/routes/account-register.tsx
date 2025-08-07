@@ -41,7 +41,7 @@ export default function register(){
             navigate("/home"); //ホーム画面へ
         } 
         if(!username) {
-            newErrors.username=("アカウント名を入力してください");
+            newErrors.username=("ユーザー名を入力してください");
         } 
         if(password.length < 8){
             newErrors.username=("８文字以上のパスワードを設定してください");
@@ -51,55 +51,55 @@ export default function register(){
 
     return(
         <div>
-            <div className="title">
+            <div className="text-2xl text-center font-bold">
                 新規登録
             </div>
-            <form onSubmit={handleRegister}>
-                <div>
-                <div className="w-32 h-32 rounded-full border-2 border-dashed border-gray-400
+            <div className="bg-green-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-b-lg shadow-md p-6">
+                <form onSubmit={handleRegister}>
+                {/*アイコン */}
+                <div className="w-64 h-64 rounded-full border-2 border-dashed border-gray-400
                         flex items-center justify-center  relativ cursor-pointer overflow-hidden bg-gray-100 hover:opacity-80"
                         onClick={handleClick}>
                     {preview ? (
                     <img src={preview} alt="アイコンプレビュー" className="w-full h-full rounded-full object-cover"/>):(
                     <UserCircleIcon className="w-full h-full text-blue-400"/>
                     )}
-                </div>
+
                 <input type="file" accept="image/*" ref={fileInputRef} onChange={handleImageChange} className="hidden"
                     aria-label="プロフィール画像をアップロード"/>
                 </div>
-                <div className="list">
-                    <div className="list-item">
-                        <label htmlFor="name" className="title">
-                            アカウント名
-                        </label>
-                        <input type="account" placeholder="アカウント名を作成" value={username}
-                            onChange={(e)=> setUsername(e.target.value)}
-                            required />
-                        {errors.username && <div className="mt-1 text-sm text-red-600">
-                            {errors.username}</div>}
-                    </div>
-                    <div className="list-item">
-                        <label htmlFor="password" className="title">
-                            パスワード
-                        </label>
-                        <input type="password"
-                            placeholder="パスワード(8文字以上)を作成" value={password}
-                            onChange={(e)=> setPassword(e.target.value)}
-                            required />
-                        {errors.password && <div className="mt-1 text-sm text-red-600">
-                            {errors.password}</div>}
-                    </div>
+                <div  className="flex flex-col mb-2">
+                    <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+                        ユーザー名
+                    </label>
+                    <input type="account" placeholder="ユーザー名を作成" value={username}
+                        className="w-full px-3 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        onChange={(e)=> setUsername(e.target.value)}
+                        required />
+                    {errors.username && <div className="mt-1 text-sm text-red-600">
+                        {errors.username}</div>}
+                    <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+                        パスワード
+                    </label>
+                    {errors.password && <div className="mt-1 text-sm text-red-600">
+                        {errors.password}</div>}
+                    <input type="password"
+                        placeholder="パスワード(8文字以上)を作成" value={password}
+                        onChange={(e)=> setPassword(e.target.value)}
+                        className="w-full px-3 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        required />
                 </div>
                 <button type="submit"
-                    className="inline-block bg-blue-600 text-white no-underline px-6 py-3 text-base rounded cursor-pointer transition-colors duration-200 hover:bg-blue-800"
+                    className="inline-block bg-red-400 text-white no-underline px-6 py-3 text-base rounded cursor-pointer transition-colors duration-200 hover:bg-red-800"
                 >
                     登録
                 </button>
-            </form>
-            <Link to="/login" className="flex items-center space-x-2">
-            <div className="w-0 h-0 border-1-[10px] border-r-[10px] border-b-[20px]
-                            border-l-transport border-r-transparent border-b-blue-500" />
-            <span className="text">ログイン画面に戻る</span>
+                </form>
+            </div>
+            </div>
+            <Link to="/login" className="flex items-center space-x-2 justify-center">
+            <div className="block text-sm font-medium text-gray-700 mb-2 hover:text-blue-800">◀ログイン画面に戻る</div>
             </Link>
         </div>
     );

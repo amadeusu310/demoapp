@@ -110,7 +110,7 @@ export default function Login() {
         </div>
         <Link
             to="/account-register"
-            className="inline-block bg-blue-600 text-white no-underline px-6 py-3 text-base rounded cursor-pointer transition-colors duration-200 hover:bg-blue-800"
+            className="border-2 border-blue-500 inline-block bg-white-600 text-black no-underline px-6 py-3 text-base rounded cursor-pointer transition-colors duration-200 hover:bg-red-500 hover:text-white"
           >
             <button type="button">新規登録</button>
         </Link>
