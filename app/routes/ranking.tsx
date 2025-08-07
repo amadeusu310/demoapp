@@ -22,44 +22,89 @@ export default function Ranking() {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [rankings, setRankings] = useState<UserRanking[]>([]);
   const [userRank, setUserRank] = useState<number>(0);
+  const [currentUserPoints, setCurrentUserPoints] = useState<number>(0);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
     const loadData = async () => {
-      const user = await getCurrentUser();
-      if (!user) {
-        navigate('/login');
-        return;
+      try {
+        console.log('ランキングデータの読み込みを開始...');
+        setLoading(true);
+        const user = await getCurrentUser();
+        console.log('現在のユーザー:', user);
+        if (!user) {
+          console.log('ユーザーがログインしていません。ログイン画面にリダイレクトします。');
+          navigate('/login');
+          return;
+        }
+        setCurrentUser(user);
+
+        // 現在のユーザーのポイントを計算
+        console.log('現在のユーザーのポイントを計算中...');
+        const userPoints = await calculateUserPoints(user.username);
+        console.log('現在のユーザーのポイント:', userPoints);
+        setCurrentUserPoints(userPoints);
+
+        // 全ユーザーのポイントを計算してランキングを作成
+        console.log('全ユーザーの情報を取得中...');
+        const users = await getUsers();
+        console.log('取得したユーザー数:', users.length);
+        
+        console.log('各ユーザーのポイントを計算中...');
+        const userRankings = await Promise.all(
+          users.map(async (u) => {
+            const points = await calculateUserPoints(u.username);
+            console.log(`${u.username}のポイント: ${points}`);
+            return {
+              username: u.username,
+              points,
+              rank: 0
+            };
+          })
+        );
+
+        // ポイント順でソート（降順）
+        userRankings.sort((a, b) => b.points - a.points);
+
+        // ランクを設定
+        userRankings.forEach((user, index) => {
+          user.rank = index + 1;
+        });
+
+        console.log('ランキング結果:', userRankings);
+        setRankings(userRankings);
+
+        // 現在のユーザーのランクを取得
+        const currentUserRank = userRankings.find(u => u.username === user.username)?.rank || 0;
+        console.log('現在のユーザーのランク:', currentUserRank);
+        setUserRank(currentUserRank);
+        
+        console.log('ランキングデータの読み込み完了');
+      } catch (error) {
+        console.error('ランキングデータの読み込みに失敗しました:', error);
+      } finally {
+        setLoading(false);
       }
-      setCurrentUser(user);
-
-      // 全ユーザーのポイントを計算してランキングを作成
-      const users = await getUsers();
-      const userRankings = await Promise.all(
-        users.map(async (u) => ({
-          username: u.username,
-          points: await calculateUserPoints(u.username),
-          rank: 0
-        }))
-      );
-
-      // ポイント順でソート（降順）
-      userRankings.sort((a, b) => b.points - a.points);
-
-      // ランクを設定
-      userRankings.forEach((user, index) => {
-        user.rank = index + 1;
-      });
-
-      setRankings(userRankings);
-
-      // 現在のユーザーのランクを取得
-      const currentUserRank = userRankings.find(u => u.username === user.username)?.rank || 0;
-      setUserRank(currentUserRank);
     };
     
     loadData();
   }, [navigate]);
+
+  if (loading) {
+    return (
+      <div className="flex flex-col h-screen bg-green-50">
+        <Header />
+        <main className="flex-grow flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500 mx-auto"></div>
+            <p className="mt-4 text-gray-600">ランキングを読み込み中...</p>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   if (!currentUser) {
     return <div>Loading...</div>;
@@ -110,7 +155,7 @@ export default function Ranking() {
                 </div>
                 <div className="text-right">
                   <div className="text-2xl font-bold text-blue-600">
-                    {calculateUserPoints(currentUser.username)}pt
+                    {currentUserPoints}pt
                   </div>
                   <div className="text-sm text-gray-600">{userRank}位</div>
                 </div>
