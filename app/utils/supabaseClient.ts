@@ -13,7 +13,7 @@ const delay = (ms: number = 50): Promise<void> => {
 export async function registerAccount(
   username: string,
   hashedPassword: string,
-  iconUrl: string
+  iconUrl: string | null //users.icon_urlカラム追加したらnullは削除
 ): Promise<User | null> {
   const {data, error} = await supabase
     .from("users")

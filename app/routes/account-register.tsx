@@ -2,6 +2,8 @@ import type { Route } from "./+types/account-register";
 import { useState, useRef } from "react";
 import {UserCircleIcon} from "@heroicons/react/24/solid";
 import { Link, useNavigate } from "react-router";
+import { registerAccount } from "~/utils/supabaseClient";
+import { hashPassword } from "~/utils/hashPassword";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -32,14 +34,12 @@ export default function register(){
         fileInputRef.current?.click();
     };
 
-    const handleRegister = (e: React.FormEvent) =>{
+    const handleRegister = async(e: React.FormEvent) =>{
         e.preventDefault();
+
+        //登録エラーあるとき
         const newErrors: typeof errors = {};
-        if(username && password.length >= 8) {
-            alert("登録成功！タスクルへようこそ！！"); //ここで通知
-            console.log("仮登録成功:", { username, password });
-            navigate("/home"); //ホーム画面へ
-        } 
+        
         if(!username) {
             newErrors.username=("ユーザー名を入力してください");
         } 
@@ -47,6 +47,22 @@ export default function register(){
             newErrors.username=("８文字以上のパスワードを設定してください");
         }
         setErrors(newErrors);
+        if(Object.keys(newErrors).length > 0) return;
+        //
+
+        try {
+            const hashed = await hashPassword(password);
+            const user = await registerAccount(username, hashed, "");//users.icon_urlカラム追加したら""に引数追加
+
+            if(user) {
+            alert("登録成功！タスクルへようこそ！！"); //ここで通知
+            console.log("登録完了:", { username, password }, "タスクルでタスクる♪");
+            navigate("/home"); //ホーム画面へ
+        } else {alert("登録に失敗しました");}
+        } catch (error) {
+            console.error("予期せぬエラーが発生:", error);//例外エラーあるとき
+        }
+
     }
 
     return(
