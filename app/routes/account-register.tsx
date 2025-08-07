@@ -123,7 +123,7 @@ export default function register(){
                         required />
                 </div>
                 <button type="submit"
-                    className="inline-block bg-red-400 text-white no-underline px-6 py-3 text-base rounded cursor-pointer transition-colors duration-200 hover:bg-red-800"
+                    className="w-full bg-red-400 text-white no-underline px-6 py-3 text-base text-center rounded-md cursor-pointer transition-colors duration-200 hover:bg-red-800 block"
                 >
                     登録
                 </button>

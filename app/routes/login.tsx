@@ -105,14 +105,14 @@ export default function Login() {
           </form>
 
           <div>
-        <div className="title">
+        <div className="title mb-2">
           初めてですか？
         </div>
         <Link
             to="/account-register"
-            className="font-bold border-3 border-blue-500 inline-block bg-white-600 text-black no-underline px-6 py-3 text-base rounded cursor-pointer transition-colors duration-200 hover:bg-red-700 hover:text-white"
+            className="w-full font-bold border-3 border-blue-500 bg-white-600 text-black no-underline px-4 py-3 text-base rounded-md cursor-pointer transition-colors duration-200 hover:bg-red-700 hover:text-white center block"
           >
-            <button type="button">新規登録</button>
+            <button type="button" className="w-full">新規登録</button>
         </Link>
       </div>
 
