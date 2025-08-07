@@ -53,7 +53,7 @@ export default function Login() {
         {/* ヘッダー */}
         <div className="bg-blue-400 text-white text-center py-6 rounded-t-lg">
           <h1 className="text-2xl font-bold">ログイン</h1>
-          <p className="text-blue-100 mt-2">ToDo Appへようこそ</p>
+          <p className="text-blue-100 mt-2">タスクルへようこそ</p>
         </div>
         
         {/* フォーム */}
@@ -110,7 +110,7 @@ export default function Login() {
         </div>
         <Link
             to="/account-register"
-            className="border-2 border-blue-500 inline-block bg-white-600 text-black no-underline px-6 py-3 text-base rounded cursor-pointer transition-colors duration-200 hover:bg-red-500 hover:text-white"
+            className="font-bold border-3 border-blue-500 inline-block bg-white-600 text-black no-underline px-6 py-3 text-base rounded cursor-pointer transition-colors duration-200 hover:bg-red-700 hover:text-white"
           >
             <button type="button">新規登録</button>
         </Link>

@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
 import type { User, Project, Task, Session, ProjectWithParticipants, ProjectParticipant } from './supabase';
+import bcrypt from "bcryptjs";
 
 // セッション管理（ブラウザのLocalStorageを使用）
 const SESSION_KEY = 'todoapp_session';
@@ -22,11 +23,30 @@ export async function registerAccount(
     .single();
 
   if (error) {
-    console.error("Error registering account:", error);
+    console.error("supabase登録エラー:", error);
     return null;
   }
   return data;
 }
+//アイコン
+/*
+export async function uploadIcon( file: File, userName: string ): Promise<string | null>{
+  const filePath = `icons/$(username)_${Date.now()}`;
+  const {data, error} = await supabase.storage
+    .from("icons")
+    .upload(filePath, file);
+
+    if (error) {
+      console.error("画像アップロード失敗:", error.message);
+      return null;
+    }
+
+    const {data: publicUrlData} = supabase.storage
+      .from("icons")
+      .getPublicUrl(filePath);
+
+  return publicUrlData?.publicUrl ?? null;
+}*/
 
 // ユーザー管理
 export async function getUsers(): Promise<User[]> {
@@ -65,15 +85,27 @@ export async function login(username: string, password: string): Promise<Session
   await delay();
   
   // ユーザー認証
-  const { data: user, error: userError } = await supabase
+  const { data: users, error: userError } = await supabase
     .from('users')
     .select('*')
-    .eq('username', username)
-    .eq('password', password)
-    .single();
+    .eq('username', username);
 
-  if (userError || !user) {
-    console.error('Login failed:', userError);
+  if (userError || !users || users.length === 0) {
+    console.error('Login failed: user not found', userError);
+    return null;
+  }
+
+  let matchedUser: User | null = null;
+  for(const user of users) {
+    const isValid = await bcrypt.compare(password, user.password);
+    if(isValid) {
+      matchedUser = user;
+      break;
+    }
+  }
+
+  if(!matchedUser){
+    console.error("Login failed: password mismatch");
     return null;
   }
 
@@ -81,19 +113,22 @@ export async function login(username: string, password: string): Promise<Session
   await supabase
     .from('sessions')
     .delete()
-    .eq('user_id', user.id);
+    .eq('user_id', matchedUser.id);
 
   // 新しいセッションを作成
   const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(); // 24時間後
   const { data: session, error: sessionError } = await supabase
     .from('sessions')
     .insert({
-      user_id: user.id,
-      username: user.username,
+      user_id: matchedUser.id,
+      username: matchedUser.username,
       expires_at: expiresAt
     })
     .select()
     .single();
+
+  console.log("セッション作成結果", session);
+  console.error("セッションエラー:", sessionError);
 
   if (sessionError || !session) {
     console.error('Session creation failed:', sessionError);
@@ -108,7 +143,7 @@ export async function login(username: string, password: string): Promise<Session
   return session;
 }
 
-export async function logout(): Promise<void> {
+export async function logout(): Promise<void> {//セッション削除＆＆ログアウト処理
   await delay();
   
   // ローカルストレージからセッション情報を取得
@@ -129,7 +164,7 @@ export async function logout(): Promise<void> {
   }
 }
 
-export async function getCurrentSession(): Promise<Session | null> {
+export async function getCurrentSession(): Promise<Session | null> {//ローカルストレージとDBのセッション確認
   await delay();
   
   if (typeof window === 'undefined') return null;
@@ -161,7 +196,7 @@ export async function getCurrentSession(): Promise<Session | null> {
   return data;
 }
 
-export async function getCurrentUser(): Promise<User | null> {
+export async function getCurrentUser(): Promise<User | null> {//セッションに紐づいたユーザーを取得
   const session = await getCurrentSession();
   if (!session) return null;
   return await getUserById(session.user_id);

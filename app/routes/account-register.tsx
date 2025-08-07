@@ -2,7 +2,7 @@ import type { Route } from "./+types/account-register";
 import { useState, useRef } from "react";
 import {UserCircleIcon} from "@heroicons/react/24/solid";
 import { Link, useNavigate } from "react-router";
-import { registerAccount } from "~/utils/supabaseClient";
+import { login, registerAccount, /*uploadIcon*/ } from "~/utils/supabaseClient";
 import { hashPassword } from "~/utils/hashPassword";
 
 export function meta({}: Route.MetaArgs) {
@@ -21,12 +21,13 @@ export default function register(){
 
     const [preview, setPreview] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
-    
+    //const [iconFile, setIconFile] = useState<File | null>(null);
 
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if(file) {
             setPreview(URL.createObjectURL(file)); //プレビュー用URL
+            //setIconFile(file); //supabaseアップロード用
         }
     };
 
@@ -39,7 +40,7 @@ export default function register(){
 
         //登録エラーあるとき
         const newErrors: typeof errors = {};
-        
+
         if(!username) {
             newErrors.username=("ユーザー名を入力してください");
         } 
@@ -49,16 +50,31 @@ export default function register(){
         setErrors(newErrors);
         if(Object.keys(newErrors).length > 0) return;
         //
+/*
+        let iconUrl = "";
+        if (iconFile) {
+            const uploaded = await uploadIcon(iconFile, username);
+            if (uploaded) iconUrl = uploaded;
+        } */
 
         try {
             const hashed = await hashPassword(password);
-            const user = await registerAccount(username, hashed, "");//users.icon_urlカラム追加したら""に引数追加
+            console.log("ハッシュ化したパスワード:", hashed);//確認用
+
+            const user = await registerAccount(username, hashed, ""/*iconUrl*/);
+            console.log("registerAccountの戻り値:", user);//確認用
 
             if(user) {
+            //自動ログイン
+            const session = await login(username, password);
+            if(!session) {
+                console.error("セッション作成に失敗");
+                return;
+            }
             alert("登録成功！タスクルへようこそ！！"); //ここで通知
             console.log("登録完了:", { username, password }, "タスクルでタスクる♪");
-            navigate("/home"); //ホーム画面へ
-        } else {alert("登録に失敗しました");}
+            navigate("/"); //ホーム画面へ
+            } else {alert("登録に失敗しました");}
         } catch (error) {
             console.error("予期せぬエラーが発生:", error);//例外エラーあるとき
         }
