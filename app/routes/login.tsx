@@ -5,7 +5,7 @@ import { login } from "~/utils/supabaseClient";
 
 export function meta(): ReturnType<Route.MetaFunction> {
   return [
-    { title: "ログイン - ToDo App" },
+    { title: "ログイン | タスクル" },
     { name: "description", content: "ログイン画面" },
   ];
 }

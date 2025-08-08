@@ -16,36 +16,36 @@ export async function registerAccount(
   hashedPassword: string,
   iconUrl: string | null //users.icon_urlカラム追加したらnullは削除
 ): Promise<User | null> {
-  const {data, error} = await supabase
-    .from("users")
-    .insert([{ username, password: hashedPassword, icon_url: iconUrl }])
-    .select()
-    .single();
+const {data: existingUser, error: checkError} = await supabase
+  .from("users").select("id").eq("username", username).single();
 
-  if (error) {
-    console.error("supabase登録エラー:", error);
+if(existingUser){
+    alert("このユーザー名は既に使われています。別のユーザー名を設定してください。");
+    console.error("このユーザー名は既に使われています");
     return null;
   }
+if(checkError && checkError.code !== "PGRST116"){
+  console.error("重複チェックエラー:", checkError);
+  return null;
+}
+const {data, error} = await supabase
+  .from("users")
+  .insert([{ username, password: hashedPassword, icon_url: iconUrl }])
+  .select()
+  .single();
+
+if (error) {
+  console.error("supabase登録エラー:", error);
+  return null;
+}
   return data;
 }
 //アイコン
 /*
-export async function uploadIcon( file: File, userName: string ): Promise<string | null>{
-  const filePath = `icons/$(username)_${Date.now()}`;
-  const {data, error} = await supabase.storage
-    .from("icons")
-    .upload(filePath, file);
-
-    if (error) {
-      console.error("画像アップロード失敗:", error.message);
-      return null;
-    }
-
-    const {data: publicUrlData} = supabase.storage
-      .from("icons")
-      .getPublicUrl(filePath);
-
-  return publicUrlData?.publicUrl ?? null;
+export async function iconSelecter(selectedIcon: string, setSelectedIcon: (url: string) => void){
+  return(
+    
+  );
 }*/
 
 // ユーザー管理
@@ -85,27 +85,14 @@ export async function login(username: string, password: string): Promise<Session
   await delay();
   
   // ユーザー認証
-  const { data: users, error: userError } = await supabase
+  const { data: user, error: userError } = await supabase
     .from('users')
     .select('*')
-    .eq('username', username);
+    .eq('username', username)
+    .single();
 
-  if (userError || !users || users.length === 0) {
+  if (userError || !user || user.length === 0) {
     console.error('Login failed: user not found', userError);
-    return null;
-  }
-
-  let matchedUser: User | null = null;
-  for(const user of users) {
-    const isValid = await bcrypt.compare(password, user.password);
-    if(isValid) {
-      matchedUser = user;
-      break;
-    }
-  }
-
-  if(!matchedUser){
-    console.error("Login failed: password mismatch");
     return null;
   }
 
@@ -113,15 +100,15 @@ export async function login(username: string, password: string): Promise<Session
   await supabase
     .from('sessions')
     .delete()
-    .eq('user_id', matchedUser.id);
+    .eq('user_id', user.id);
 
   // 新しいセッションを作成
   const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(); // 24時間後
   const { data: session, error: sessionError } = await supabase
     .from('sessions')
     .insert({
-      user_id: matchedUser.id,
-      username: matchedUser.username,
+      user_id: user.id,
+      username: user.username,
       expires_at: expiresAt
     })
     .select()
