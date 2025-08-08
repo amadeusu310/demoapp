@@ -135,16 +135,14 @@ export default function register(){
                     </label>
                     <input type="account" placeholder="ユーザー名を作成" value={formData.username}
                         className="w-full px-3 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent mb-2"
-                        onChange={(e) => handleInputChange("username", e.target.value)}
-                        required />
+                        onChange={(e) => handleInputChange("username", e.target.value)}/>
                     <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
                         パスワード
                     </label>
                     <input type="password"
                         placeholder="パスワード(8文字以上)を作成" value={formData.password}
                         onChange={(e) => handleInputChange("password", e.target.value)}
-                        className="w-full px-3 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        required />
+                        className="w-full px-3 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"/>
                 </div>
                 <button type="submit"
                     className="w-full bg-red-400 text-white no-underline px-6 py-3 text-base text-center rounded-md cursor-pointer transition-colors duration-200 hover:bg-red-800 block"
