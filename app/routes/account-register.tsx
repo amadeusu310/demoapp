@@ -1,6 +1,6 @@
 import type { Route } from "./+types/account-register";
 import { useState, useRef } from "react";
-import {UserCircleIcon} from "@heroicons/react/24/solid";
+import {UserCircleIcon, UserIcon} from "@heroicons/react/24/solid";
 import { Link, useNavigate } from "react-router";
 import { login, registerAccount, /*iconSelector*/ } from "~/utils/supabaseClient";
 import { hashPassword } from "~/utils/hashPassword";
@@ -20,36 +20,10 @@ export default function register(){
 
     const navigate = useNavigate();
 
-    const [preview, setPreview] = useState<string | null>(null);
-    const fileInputRef = useRef<HTMLInputElement>(null);
-
-    //const [selectedIcon, setSelectedIcon] = useState("");
-
-    /*const avaterOptions = [
-      "https://i.pravatar.cc/150?img=1",
-      "https://i.pravatar.cc/150?img=2",
-      "https://i.pravatar.cc/150?img=3",
-      "https://i.pravatar.cc/150?img=4",
-      "https://i.pravatar.cc/150?img=5",
-    ];
-    {avaterOptions.map((url) => (
-        <img src={url}
-            onClick={() => setSelectedIcon(url)}
-            className={`${selectedIcon === url ? url: null`}/>
-    ))
-
-    }*/
-
-    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if(file) {
-            setPreview(URL.createObjectURL(file)); //プレビュー用URL
-        }
-    };
-
-    const handleClick = () =>{
-        fileInputRef.current?.click();
-    };
+    const iconList = [UserCircleIcon, UserIcon];
+    const [selectedColor, setSelectedColor] = useState("#000000")//黒初期値
+    const [SelectedIcon, setSelectedIcon] = useState<React.ElementType | null>(null)
+    const [showColorPicker, setShowColorPicker] = useState(false);
 
     const handleInputChange = (field: string, value: string) => {
         setFormData(prev => ({
@@ -75,13 +49,21 @@ export default function register(){
             setError("８文字以上のパスワードを設定してください");
             return;
         }
+        if (!SelectedIcon){
+            setError("アイコンを選択してください");
+            return;
+        }
         //
 
         try {
             const hashed = await hashPassword(formData.password);
             console.log("ハッシュ化したパスワード:", hashed);//確認用
 
-            const user = await registerAccount(formData.username, hashed, ""/*iconUrl*/);
+            const iconData = {
+                name: setSelectedIcon.name, color: selectedColor,
+            };
+
+            const user = await registerAccount(formData.username, hashed, JSON.stringify(iconData));
             console.log("registerAccountの戻り値:", user);//確認用
 
             if(user) {
@@ -99,27 +81,44 @@ export default function register(){
             console.error("予期せぬエラーが発生:", error);//例外エラーあるとき
         }
 
-    }
+    };
 
     return(
         <div>
-            <div className="text-3xl text-center font-bold">
-                新規登録
-            </div>
+            <div className="text-3xl text-center font-bold"> 新規登録 </div>
             <div className="bg-green-50 flex items-center justify-center p-4">
             <div className="bg-white rounded-b-lg shadow-md p-6">
                 <form onSubmit={handleRegister}>
-                {/*アイコン */}
-                <div className="w-64 h-64 rounded-full border-2 border-dashed border-gray-400 mb-3
-                        flex items-center justify-center  relative cursor-pointer overflow-hidden bg-gray-100 hover:opacity-80 mx-auto"
-                        onClick={handleClick}>
-                    {preview ? (
-                    <img src={preview} alt="アイコンプレビュー" className="w-full h-full rounded-full object-cover"/>):(
-                    <UserCircleIcon className="w-full h-full text-blue-400"/>
+                <div className="flex justify-center mb-6 relative w-64 h-64">
+            {/*プレビュー*/} 
+                <div className="w-64 h-64 rounded-full border-4 border-gray-300 flex items-center justify-center bg-gray-100">
+                    {SelectedIcon ? ((()=>{
+                        const IconComponent = SelectedIcon;
+                        return <IconComponent className="w-full h-full" style={{color: selectedColor}}/>;
+                    })()):( <UserCircleIcon className="w-full h-full text-gray-400"/>
                     )}
-
-                <input type="file" accept="image/*" ref={fileInputRef} onChange={handleImageChange} className="hidden"
-                    aria-label="プロフィール画像をアップロード"/>
+                </div>
+            {/* 色選択（プレビューに重ねる）*/}
+                    <input title="色選択"
+                        type="color" value={selectedColor}
+                        onChange={(e)=>setSelectedColor(e.target.value)}
+                        className="absolute top-0 left-0 w-64 h-64 opacity-0 cursor-pointer"/>
+                </div>
+            {/* アイコン一覧 */}
+                <div className="flex gap-4 justify-center mb-6">
+                    {iconList.map((Icon, index) => (
+                    <Icon
+                     key={index}
+                        className={`w-12 h-12 cursor-pointer border rounded-2xl p-1 ${
+                        SelectedIcon === Icon ? "border-blue-500 border-4" : "border-gray-300"
+                        }`}
+                    style={{ color: selectedColor }}
+                    onClick={() => setSelectedIcon(() => Icon)}
+                    />
+                    ))}
+                    <div className="block text-sm font-medium text-gray-700 mb-2">
+                        ◀アイコンを選択
+                    </div>
                 </div>
 
             {/* エラーメッセージ */}

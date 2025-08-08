@@ -1,6 +1,7 @@
 import { supabase } from './supabase';
 import type { User, Project, Task, Session, ProjectWithParticipants, ProjectParticipant } from './supabase';
 import bcrypt from "bcryptjs";
+import {useState} from "react";
 
 // セッション管理（ブラウザのLocalStorageを使用）
 const SESSION_KEY = 'todoapp_session';
@@ -14,7 +15,7 @@ const delay = (ms: number = 50): Promise<void> => {
 export async function registerAccount(
   username: string,
   hashedPassword: string,
-  iconUrl: string | null //users.icon_urlカラム追加したらnullは削除
+  iconData: string | null 
 ): Promise<User | null> {
 const {data: existingUser, error: checkError} = await supabase
   .from("users").select("id").eq("username", username).single();
@@ -30,7 +31,7 @@ if(checkError && checkError.code !== "PGRST116"){
 }
 const {data, error} = await supabase
   .from("users")
-  .insert([{ username, password: hashedPassword, icon_url: iconUrl }])
+  .insert([{ username, password: hashedPassword, icon_data: iconData },])
   .select()
   .single();
 
@@ -40,13 +41,7 @@ if (error) {
 }
   return data;
 }
-//アイコン
-/*
-export async function iconSelecter(selectedIcon: string, setSelectedIcon: (url: string) => void){
-  return(
-    
-  );
-}*/
+
 
 // ユーザー管理
 export async function getUsers(): Promise<User[]> {
