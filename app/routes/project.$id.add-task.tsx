@@ -24,6 +24,7 @@ export default function AddTask() {
     point: "",
     comment: ""
   });
+  const [loading, setLoading] = useState(true); // ローディング状態
 
   useEffect(() => {
     const loadData = async () => {
@@ -47,34 +48,47 @@ export default function AddTask() {
       }
 
       setProject(projectData);
+      setLoading(false);
     };
-    
+
     loadData();
   }, [id, navigate]);
 
+  // フォームの入力処理
   const handleInputChange = (field: string, value: string) => {
+    if (field === "point") {
+      const numericValue = parseInt(value);
+      if (!isNaN(numericValue)) {
+        if (numericValue > 100) {
+          value = "300"; // 最大値制限
+        } else if (numericValue < 1) {
+          value = "1"; // 最小値制限（任意）
+        }
+      }
+    }
     setFormData(prev => ({
       ...prev,
       [field]: value
     }));
   };
 
+  // フォーム送信処理
   const handleSubmit = async () => {
     if (!formData.title.trim()) {
       alert("タスク名を入力してください");
       return;
     }
-    
+
     if (!formData.category) {
       alert("カテゴリを選択してください");
       return;
     }
-    
+
     if (!formData.period) {
       alert("期限を設定してください");
       return;
     }
-    
+
     if (!formData.point) {
       alert("ポイントを選択してください");
       return;
@@ -99,8 +113,12 @@ export default function AddTask() {
     }
   };
 
-  if (!currentUser || !project) {
-    return <div>Loading...</div>;
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-gray-900"></div>
+      </div>
+    );
   }
 
   return (
@@ -112,15 +130,12 @@ export default function AddTask() {
           <div className="bg-blue-400 text-white text-center py-4 rounded-t-lg">
             <h1 className="text-lg md:text-xl font-bold">タスクを追加</h1>
           </div>
-          
+
           {/* フォーム */}
           <div className="bg-white rounded-b-lg shadow-md p-6 space-y-6">
-            
             {/* タスク名 */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                タスク名
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">タスク名</label>
               <input
                 type="text"
                 value={formData.title}
@@ -128,88 +143,51 @@ export default function AddTask() {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="タスク名を入力してください"
               />
-              <p className="text-red-500 text-xs mt-1">入力してください</p>
             </div>
 
             {/* カテゴリ */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                カテゴリ
-              </label>
-              <div className="relative">
-                <select
-                  value={formData.category}
-                  onChange={(e) => handleInputChange("category", e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white"
-                >
-                  <option value="">選択してください</option>
-                  <option value="work">仕事</option>
-                  <option value="personal">個人</option>
-                  <option value="study">勉強</option>
-                  <option value="other">その他</option>
-                </select>
-                <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
-                  <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </div>
-              </div>
-              <p className="text-red-500 text-xs mt-1">入力してください</p>
+              <label className="block text-sm font-medium text-gray-700 mb-2">カテゴリ</label>
+              <select
+                value={formData.category}
+                onChange={(e) => handleInputChange("category", e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="">選択してください</option>
+                <option value="work">仕事</option>
+                <option value="personal">個人</option>
+                <option value="study">勉強</option>
+                <option value="other">その他</option>
+              </select>
             </div>
 
-            {/* 期間 */}
+            {/* 期限 */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                期間
-              </label>
-              <div className="relative">
-                <input
-                  type="date"
-                  value={formData.period}
-                  onChange={(e) => handleInputChange("period", e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-                <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
-                  <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                </div>
-              </div>
-              <p className="text-red-500 text-xs mt-1">入力してください</p>
+              <label className="block text-sm font-medium text-gray-700 mb-2">期限</label>
+              <input
+                type="date"
+                value={formData.period}
+                onChange={(e) => handleInputChange("period", e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
             </div>
 
             {/* ポイント */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                ポイント
-              </label>
-              <div className="relative">
-                <select
-                  value={formData.point}
-                  onChange={(e) => handleInputChange("point", e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white"
-                >
-                  <option value="">選択してください</option>
-                  <option value="1">1ポイント</option>
-                  <option value="2">2ポイント</option>
-                  <option value="3">3ポイント</option>
-                  <option value="5">5ポイント</option>
-                  <option value="8">8ポイント</option>
-                </select>
-                <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
-                  <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </div>
-              </div>
-              <p className="text-red-500 text-xs mt-1">入力してください</p>
+              <label className="block text-sm font-medium text-gray-700 mb-2">ポイント（1〜300）</label>
+              <input
+                type="number"
+                min="1"
+                max="300"
+                value={formData.point}
+                onChange={(e) => handleInputChange("point", e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
             </div>
 
             {/* コメント */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                コメント
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">コメント</label>
               <textarea
                 value={formData.comment}
                 onChange={(e) => handleInputChange("comment", e.target.value)}
@@ -229,7 +207,7 @@ export default function AddTask() {
               </Link>
               <button
                 onClick={handleSubmit}
-                className="flex-1 py-3 px-4 bg-gray-300 text-gray-700 rounded-full font-medium hover:bg-gray-400 transition-colors duration-200"
+                className="flex-1 py-3 px-4 bg-blue-500 text-white rounded-full font-medium hover:bg-blue-600 transition-colors duration-200"
               >
                 追加
               </button>
