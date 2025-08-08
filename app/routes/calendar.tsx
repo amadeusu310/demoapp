@@ -2,11 +2,15 @@ import { Link } from "react-router";
 import type { Route } from "./+types/calendar";
 import Header from "~/components/Header";
 import Footer from "~/components/Footer";
-import { getTasks } from "~/utils/supabaseClient";
-import { useState, useEffect } from "react";
-import Gantt from "react-frappe-gantt";
-import type {GanttTask, DbTask} from "~/types/react-frappe-gantt";
+import { useState, useEffect, useMemo } from "react";
+import { Gantt, ViewMode } from "gantt-task-react";
+import "gantt-task-react/dist/index.css";
+import type { Task } from "gantt-task-react";
+import { getTasks, getProjects } from "~/utils/supabaseClient";
 
+interface ProjectTask extends Task {
+  projectName: string;
+}
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -15,41 +19,70 @@ export function meta({}: Route.MetaArgs) {
   ];
 }
 
-export default function Calendar(){
-  const [tasks,setTasks] = useState<GanttTask[]>([]);//型指定
+export default function Calendar() {
+  const [tasks, setTasks] = useState<ProjectTask[]>([]);
+  const [selectedProject, setSelectedProject] = useState<string>("全て");
 
   useEffect(()=>{
     (async () => {
-      const data: DbTask[] = await getTasks();
+      const tasksData = await getTasks();
+      const projectsData = await getProjects();
 
-      const formatted: GanttTask[] = data.map(task =>({  //ガントチャート
-        id: String(task.id),
-        name: task.title,
-        start: typeof task.created_at==="string" 
-          ? task.created_at 
-          : task.created_at
-          ? task.created_at.toISOString().slice(0,10) 
-          : "",
-        end: typeof task.period==="string"
-          ? task.period
-          : task.period
-          ? task.period.toISOString().slice(0,10)
-          : "",
-        progress: task.completed ? 100:0, //完了なら100%, 未完了は0%
-      }));
+      const formatted: ProjectTask[] = tasksData.map((task) => {
+        const project = projectsData.find(p=> p.id === task.project_id);
+        return {
+          id: String(task.id),
+          name: task.title,
+          start: new Date(task.created_at),//始まりでいいか？
+          end: new Date(task.period),
+          type: "task",
+          progress: task.completed ? 100:0,
+          isDisabled: true,
+          projectName: project? project.name : "不明"
+        } as ProjectTask;
+        });
       setTasks(formatted);
     })();
-  }, []);
+  },[]);
+  //プロジェクト一覧作成
+  const projectList = useMemo(() => {
+    const name = tasks.map(t => t.projectName);
+    return ["全て", ...Array.from(new Set(name))];
+  }, [tasks]);
+  //プロジェクトでフィルタリング
+  const filteredTasks = useMemo(() => {
+    return selectedProject ==="全て"
+    ? tasks : tasks.filter(task => task.projectName === selectedProject)
+    },[tasks, selectedProject]);
 
-  return(
+  const ganttComponent = useMemo(()=>(
+    <Gantt tasks={filteredTasks} viewMode={ViewMode.Day}/>
+  ), [filteredTasks]);
+
+  return (
     <div className="flex flex-col h-screen bg-green-50">
-      <Header />
-      <main className="flex-grow pt-20 pb-20 overflow-y-auto p-4">
-        {tasks.length > 0 ? (
-          <Gantt tasks={tasks} viewMode="Day"/>
-        ):(<p>読み込み中...</p>)}
+      <Header/>
+      <main className="flex-grow pt-30 pb-20 overflow-y-auto p-4">
+        {/*プロジェクト選択 */}
+        <div className="mb-4">
+          <select value={selectedProject} title="プロジェクトを選択"
+            onChange={(e)=>{
+              console.log("選択されたproject:", e.target.value);
+              setSelectedProject(e.target.value);}}
+            className="border rounded p-2">
+            {projectList.map((project)=>(
+              <option key={project} value={project}>
+                {project === "全て" ? "全てのプロジェクト" : project}
+              </option>
+            ))}
+          </select>
+        </div>
+        {/*ガントチャート */}
+          {tasks.length > 0 ? ganttComponent :(
+            <p>タスクがありません</p>
+          )}
       </main>
       <Footer />
     </div>
-  )
+  );
 }

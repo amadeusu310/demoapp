@@ -507,6 +507,39 @@ export async function deleteTask(id: number): Promise<boolean> {
   return true;
 }
 
+// タスクとプロジェクト名をまとめて取得
+export async function getTasksWithProjectName() {
+  // タスク一覧
+  const { data: tasks, error: tasksError } = await supabase
+    .from('tasks')
+    .select('*')
+    .order('created_at');
+
+  if (tasksError || !tasks) {
+    console.error('Error fetching tasks:', tasksError);
+    return [];
+  }
+
+  // プロジェクト一覧
+  const { data: projects, error: projectsError } = await supabase
+    .from('projects')
+    .select('id, name');
+
+  if (projectsError || !projects) {
+    console.error('Error fetching projects:', projectsError);
+    return [];
+  }
+
+  // project_id で名前を付与
+  return tasks.map(task => {
+    const project = projects.find(p => p.id === task.project_id);
+    return {
+      ...task,
+      project_name: project ? project.name : ''
+    };
+  });
+}
+
 // ポイント計算
 export async function calculateUserPoints(username: string): Promise<number> {
   await delay();
