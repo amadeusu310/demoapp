@@ -308,6 +308,55 @@ export async function getUserProjects(username: string): Promise<ProjectWithPart
 
   return projectsWithParticipants;
 }
+//ユーザーが参加しているプロジェクトの全タスクを取得(Gantt用)
+export async function getGanttTasks(username: string){
+  await delay();
+  //ユーザー参加プロジェクト一覧取得
+  const userProjects = await getUserProjects(username);
+  if(userProjects.length === 0) return [];
+  const projectIds = userProjects.map(p => p.id);
+  
+  
+}
+
+//ユーザー参加プロジェクトのタスクをカテゴリで絞り込む(Gantt用)
+export async function getGanttTasksByCategory(username: string, category?: string){
+  await delay();
+
+  //ユーザー参加プロジェクト一覧取得
+  const userProjects = await getUserProjects(username);
+  if(userProjects.length === 0) return [];
+  const projectIds = userProjects.map(p => p.id);
+
+  //タスク取得(カテゴリ指定あればフィルタ)
+  let query = supabase
+  .from("tasks")
+  .select("*")
+  .in("peoject_id", projectIds);
+
+  if(category){
+    query = query.eq("category", category);
+  }
+  const {data: tasks, error: tasksError} = await query;
+  if(tasksError){
+    console.error("Error fetching tasks:", tasksError);
+    return [];
+  }
+  if(!tasks) return [];
+
+  //gantt-task-react用に整形
+  return tasks.map(task => ({
+    id: String(task.id),
+    name: task.title || "Untitled Task",
+    start: new Date(task.created_at),
+    end: new Date(task.period),
+    type: "task" as const,//必要に応じてcategoryから変換可能
+    progress: task.completed? 100:0,
+    project: String(task.project_id),
+    styles: {progressColor: "#ffbb54", progressSelectedcolor: "#ff9e0d"}
+  }));
+}
+
 
 export async function createProject(projectData: Omit<Project, 'id' | 'created_at' | 'updated_at'> & { participants: string[] }): Promise<ProjectWithParticipants | null> {
   await delay();

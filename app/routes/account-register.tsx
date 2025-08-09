@@ -2,7 +2,7 @@ import type { Route } from "./+types/account-register";
 import { useState, useRef } from "react";
 import {UserCircleIcon, UserIcon} from "@heroicons/react/24/solid";
 import { Link, useNavigate } from "react-router";
-import { login, registerAccount, /*iconSelector*/ } from "~/utils/supabaseClient";
+import { login, registerAccount } from "~/utils/supabaseClient";
 import { hashPassword } from "~/utils/hashPassword";
 
 export function meta({}: Route.MetaArgs) {

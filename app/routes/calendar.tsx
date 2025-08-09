@@ -6,7 +6,8 @@ import { useState, useEffect, useMemo } from "react";
 import { Gantt, ViewMode } from "gantt-task-react";
 import "gantt-task-react/dist/index.css";
 import type { Task } from "gantt-task-react";
-import { getTasks, getProjects } from "~/utils/supabaseClient";
+import { getCurrentUser} from "~/utils/supabaseClient";
+import { supabase } from "~/utils/supabase";
 
 interface ProjectTask extends Task {
   projectName: string;
@@ -20,31 +21,106 @@ export function meta({}: Route.MetaArgs) {
 }
 
 export default function Calendar() {
+  const [username, setUsername] = useState("");
   const [tasks, setTasks] = useState<ProjectTask[]>([]);
+  const [projects, setProjects] = useState<{id: string; name: string}[]>([]);
   const [selectedProject, setSelectedProject] = useState<string>("全て");
 
-  useEffect(()=>{
-    (async () => {
-      const tasksData = await getTasks();
-      const projectsData = await getProjects();
+  //ユーザーの参加プロジェクトを取得
+  const getUserProjects = async(username: string) => {
+    const {data: parts, error: partError} = await supabase
+      .from("project_participants")
+      .select("project_id")
+    .eq("username", username);
 
-      const formatted: ProjectTask[] = tasksData.map((task) => {
-        const project = projectsData.find(p=> p.id === task.project_id);
-        return {
-          id: String(task.id),
-          name: task.title,
-          start: new Date(task.created_at),//始まりでいいか？
-          end: new Date(task.period),
-          type: "task",
-          progress: task.completed ? 100:0,
-          isDisabled: true,
-          projectName: project? project.name : "不明"
-        } as ProjectTask;
-        });
-      setTasks(formatted);
-    })();
+    if(partError) {
+      console.error("プロジェクト取得エラー:", partError);
+      return [];
+    }
+    const projectIds = Array.from(
+      new Set((parts || []).map((p: any) => String(p.project_id)).filter(Boolean))
+    );
+    if (projectIds.length === 0) return [];
+
+    const { data: projectsData, error: projectsError } = await supabase
+      .from("projects")
+      .select("id, name")
+      .in("id", projectIds);
+    if(projectsError) {
+      console.error("projects 取得エラー:", projectsError);
+      return [];
+    }
+    return (projectsData || []).map((p:any)=>({
+      id: String(p.id),
+      name: p.name ?? "不明なプロジェクト",
+    }));
+  };
+
+  //プロジェクトに属するタスクを取得
+  const getUserTasksWithProjectName = async (projectIds: string[])=>{
+    if(!projectIds || projectIds.length === 0) return [];
+
+     const { data: projectsData, error: projectsError } = await supabase
+    .from("projects")
+    .select("id, name")
+    .in("id", projectIds);
+
+    const projectMap: Record<string, string> = {};
+    if (!projectsError && projectsData) {
+      for (const p of projectsData) {
+        projectMap[String(p.id)] = p.name ?? "不明なプロジェクト";
+      }
+    } else if (projectsError) {
+      console.warn("projects マップ取得で警告:", projectsError);
+    }
+
+    const {data, error} = await supabase
+      .from("tasks").select(`
+        id, title, created_at, period, completed, project_id, projects(name)`
+      ).in("project_id", projectIds);
+
+    if(error){
+      console.error("タスク取得エラー:", error);
+      return [];
+    }
+
+    return (data || []).map((task:any) => {
+    const start= task.created_at ? new Date(task.created_at) : new Date();
+    const end = task.period ? new Date(task.period) : new Date(start.getTime()+1000*60*60*24);
+
+     return {
+      id: String(task.id),
+      name: task.title ?? "(無題)",
+      start,
+      end,
+      type: "task" as const,
+      progress: task.completed ? 100: 0,
+      isDisabled: true,
+      projectName: projectMap[String(task.project_id)]?? "不明なプロジェクト",
+    } as ProjectTask;
+  });
+  };
+
+
+  //ユーザー名・プロジェクト・タスクを取得
+  useEffect(()=>{
+    const loadData = async ()=>{
+      const user = await getCurrentUser();
+      if (!user) return;
+
+      setUsername(user.username);
+      const userProjects= await getUserProjects(user.username);
+      setProjects(userProjects);
+
+      const projectIds = userProjects.map(p=>p.id);
+      const userTasks = await getUserTasksWithProjectName(projectIds);
+      setTasks(userTasks);
+    };
+    loadData();
   },[]);
-  //プロジェクト一覧作成
+
+
+  //プロジェクト一覧作成(選択用)
   const projectList = useMemo(() => {
     const name = tasks.map(t => t.projectName);
     return ["全て", ...Array.from(new Set(name))];
@@ -78,9 +154,8 @@ export default function Calendar() {
           </select>
         </div>
         {/*ガントチャート */}
-          {tasks.length > 0 ? ganttComponent :(
-            <p>タスクがありません</p>
-          )}
+          {tasks.length > 0 ? ganttComponent :
+            <p>タスクがありません</p>}
       </main>
       <Footer />
     </div>
