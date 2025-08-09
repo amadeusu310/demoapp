@@ -121,7 +121,26 @@ export default function Calendar() {
   const [projects, setProjects] = useState<{id: string; name: string}[]>([]);
   const [selectedProject, setSelectedProject] = useState<string>("全て");
   const [selectedCategory, setSelectedCategory] = useState<string>("全て");
+  const [loading, setLoading] = useState(true);
 
+  // タスク配列を安全にする関数
+const sanitizeTasks = (tasks: any[]): Task[] => {
+  return (tasks || []).filter(
+    (t): t is Task =>
+      t != null &&
+      typeof t === "object" &&
+      !!t.start &&
+      !!t.end &&
+      !isNaN(new Date(t.start).getTime())&&
+      !isNaN(new Date(t.end).getTime())&&
+      typeof t.name === "string"
+  )
+  .map((t)=>({
+    ...t,
+    start: t.start instanceof Date ? t.start : new Date(t.start),
+    end: t.end instanceof Date ? t.end : new Date(t.end),
+  }));
+};
   //ユーザー名・プロジェクト・タスクを取得
   useEffect(()=>{
     const loadData = async ()=>{
@@ -286,13 +305,18 @@ export default function Calendar() {
 
 
 //ガントチャート描画
-  const ganttComponent = useMemo(()=>(
-    <Gantt tasks={filteredTasks}
+  const ganttComponent = useMemo(()=>{
+      const safeFilteredTasks = sanitizeTasks(filteredTasks);
+      if(safeFilteredTasks.length === 0){
+        return <div>タスクがありません</div>
+      }
+    return (
+      <Gantt tasks={safeFilteredTasks}
       viewMode={ViewMode.Day}
       TooltipContent={CustomToolTip}
       columnWidth={60}
-      listCellWidth="155px"/>
-  ), [filteredTasks]);
+      listCellWidth="155px"/>);
+    }, [filteredTasks]);
 
   return (
     <div className="flex flex-col h-screen bg-green-50">
