@@ -51,6 +51,18 @@ export function meta({}: Route.MetaArgs) {
     }));
   };
 
+  //カテゴリごとの色変
+  const categoryColors: Record<string, string> = {
+    "仕事": "#2d56c2",
+    "work": "#2d56c2",
+    "個人": "#ebc457",
+    "personal": "#ebc457",
+    "勉強": "#4cd94c",
+    "study": "#4cd94c",
+    "その他": "#b44ede",
+    "other": "#b44ede"
+  };
+
    //プロジェクトに属するタスクを取得
   const getUserTasksWithProjectName = async (projectIds: string[])=>{
     if(!projectIds || projectIds.length === 0) return [];
@@ -82,6 +94,12 @@ export function meta({}: Route.MetaArgs) {
     return (data || []).map((task:any) => {
     const start= task.created_at ? new Date(task.created_at) : new Date();
     const end = task.period ? new Date(task.period) : new Date(start.getTime()+1000*60*60*24);
+    const category = task.category ?? "未分類";
+    const color = categoryColors[category] || "d6baeo";
+    const isCompleted = !!task.completed;
+    //未完了は薄くする
+    const displayColor = isCompleted ? color : `${color}70`;
+    console.log("task sample:", task.category, task.styles);
 
      return {
       id: String(task.id),
@@ -93,6 +111,12 @@ export function meta({}: Route.MetaArgs) {
       isDisabled: true,
       projectName: projectMap[String(task.project_id)]?? "不明なプロジェクト",
       category: task.category ?? "",
+      styles: { 
+        progressColor: displayColor,//完了部分
+        progressSelectedColor: displayColor,//完了部分（選択時）
+        backgroundColor: displayColor,//未完了部分
+        backgroundSelectedColor: displayColor//未完了部分(選択時)
+       } 
     } as ProjectTask;
   });
   };
