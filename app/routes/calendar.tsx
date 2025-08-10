@@ -334,12 +334,14 @@ const sanitizeTasks = (tasks: any[]): Task[] => {
         return <div>タスクがありません</div>
       }
     return (
-      <div className="overflow-x-auto touch-pan-x">
-        <Gantt tasks={safeFilteredTasks}
-        viewMode={ViewMode.Day}
-        TooltipContent={CustomToolTip}
-        columnWidth={50}
-        listCellWidth="130px"/>
+      <div className="overflow-x-auto touch-pan-x flex-1" style={{ WebkitOverflowScrolling: 'touch'}}>
+        <div className="min-w-[800px]">
+          <Gantt tasks={safeFilteredTasks}
+            viewMode={ViewMode.Day}
+            TooltipContent={CustomToolTip}
+            columnWidth={50}
+            listCellWidth="130px"/>
+        </div>
       </div>
     );
     }, [filteredTasks]);
