@@ -1,6 +1,5 @@
 import type { Route } from "./+types/account-register";
-import { useState, useRef } from "react";
-import {UserCircleIcon, UserIcon} from "@heroicons/react/24/solid";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { login, registerAccount } from "~/utils/supabaseClient";
 import { hashPassword } from "~/utils/hashPassword";
@@ -14,16 +13,11 @@ export function meta({}: Route.MetaArgs) {
 
 export default function register(){
     const [formData, setFormData] = useState({
-    username: "",
-    password: ""});
+        username: "",
+        password: ""
+    });
     const [error, setError] = useState("");
-
     const navigate = useNavigate();
-
-    const iconList = [UserCircleIcon, UserIcon];
-    const [selectedColor, setSelectedColor] = useState("#000000")//黒初期値
-    const [SelectedIcon, setSelectedIcon] = useState<React.ElementType | null>(null)
-    const [showColorPicker, setShowColorPicker] = useState(false);
 
     const handleInputChange = (field: string, value: string) => {
         setFormData(prev => ({
@@ -33,127 +27,110 @@ export default function register(){
         setError("");
     };
 
-    const handleRegister = async(e: React.FormEvent) =>{
+    const handleRegister = async(e: React.FormEvent) => {
         e.preventDefault();
 
-        //登録エラーあるとき
+        // バリデーション
         if (!formData.username.trim()) {
-            setError("ユーザー名を作成してください");
+            setError("ユーザー名を入力してください");
             return;
         }
         if (!formData.password.trim()) {
-            setError("パスワードを作成してください");
+            setError("パスワードを入力してください");
             return;
         }
         if(formData.password.length < 8){
-            setError("８文字以上のパスワードを設定してください");
+            setError("パスワードは8文字以上で入力してください");
             return;
         }
-        if (!SelectedIcon){
-            setError("アイコンを選択してください");
-            return;
-        }
-        //
 
         try {
             const hashed = await hashPassword(formData.password);
-            console.log("ハッシュ化したパスワード:", hashed);//確認用
+            console.log("ハッシュ化したパスワード:", hashed);
 
-            const iconData = {
-                name: setSelectedIcon.name, color: selectedColor,
-            };
-
-            const user = await registerAccount(formData.username, hashed, JSON.stringify(iconData));
-            console.log("registerAccountの戻り値:", user);//確認用
+            const user = await registerAccount(formData.username, hashed, "");
+            console.log("registerAccountの戻り値:", user);
 
             if(user) {
-            //自動ログイン
-            const session = await login(formData.username, formData.password);
-            if(!session) {
-                console.error("セッション作成に失敗");
-                return;
+                // 自動ログイン
+                const session = await login(formData.username, formData.password);
+                if(!session) {
+                    console.error("セッション作成に失敗");
+                    setError("ログインに失敗しました");
+                    return;
+                }
+                alert("登録成功！タスクルへようこそ！");
+                console.log("登録完了:タスクルでタスクる♪");
+                navigate("/");
+            } else {
+                setError("登録に失敗しました");
             }
-            alert("登録成功！タスクルへようこそ！！"); //ここで通知
-            console.log("登録完了:タスクルでタスクる♪");
-            navigate("/"); //ホーム画面へ
-            } else {alert("登録に失敗しました");}
         } catch (error) {
-            console.error("予期せぬエラーが発生:", error);//例外エラーあるとき
+            console.error("予期せぬエラーが発生:", error);
+            setError("予期せぬエラーが発生しました");
         }
-
     };
 
     return(
-        <div>
-            <div className="text-3xl text-center font-bold"> 新規登録 </div>
-            <div className="bg-green-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-b-lg shadow-md p-6">
-                <form onSubmit={handleRegister}>
-                <div className="flex justify-center mb-6 relative w-64 h-64">
-            {/*プレビュー*/} 
-                <div className="w-64 h-64 rounded-full border-4 border-gray-300 flex items-center justify-center bg-gray-100">
-                    {SelectedIcon ? ((()=>{
-                        const IconComponent = SelectedIcon;
-                        return <IconComponent className="w-full h-full" style={{color: selectedColor}}/>;
-                    })()):( <UserCircleIcon className="w-full h-full text-gray-400"/>
-                    )}
-                </div>
-            {/* 色選択（プレビューに重ねる）*/}
-                    <input title="色選択"
-                        type="color" value={selectedColor}
-                        onChange={(e)=>setSelectedColor(e.target.value)}
-                        className="absolute top-0 left-0 w-64 h-64 opacity-0 cursor-pointer"/>
-                </div>
-            {/* アイコン一覧 */}
-                <div className="flex gap-4 justify-center mb-6">
-                    {iconList.map((Icon, index) => (
-                    <Icon
-                     key={index}
-                        className={`w-12 h-12 cursor-pointer border rounded-2xl p-1 ${
-                        SelectedIcon === Icon ? "border-blue-500 border-4" : "border-gray-300"
-                        }`}
-                    style={{ color: selectedColor }}
-                    onClick={() => setSelectedIcon(() => Icon)}
-                    />
-                    ))}
-                    <div className="block text-sm font-medium text-gray-700 mb-2">
-                        ◀アイコンを選択
-                    </div>
+        <div className="min-h-screen bg-green-50 flex items-center justify-center p-4">
+            <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8">
+                <div className="text-center mb-8">
+                    <h1 className="text-3xl font-bold text-gray-800 mb-2">新規登録</h1>
+                    <p className="text-gray-600">アカウントを作成してタスクルを始めましょう</p>
                 </div>
 
-            {/* エラーメッセージ */}
                 {error && (
-                    <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md">
-                {error}
-                </div>
+                    <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md">
+                        {error}
+                    </div>
                 )}
 
-                <div  className="flex flex-col mb-2">
-                    <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
-                        ユーザー名
-                    </label>
-                    <input type="account" placeholder="ユーザー名を作成" value={formData.username}
-                        className="w-full px-3 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent mb-2"
-                        onChange={(e) => handleInputChange("username", e.target.value)}/>
-                    <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-                        パスワード
-                    </label>
-                    <input type="password"
-                        placeholder="パスワード(8文字以上)を作成" value={formData.password}
-                        onChange={(e) => handleInputChange("password", e.target.value)}
-                        className="w-full px-3 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"/>
-                </div>
-                <button type="submit"
-                    className="w-full bg-red-400 text-white no-underline px-6 py-3 text-base text-center rounded-md cursor-pointer transition-colors duration-200 hover:bg-red-800 block"
-                >
-                    登録
-                </button>
+                <form onSubmit={handleRegister} className="space-y-6">
+                    <div>
+                        <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2">
+                            ユーザー名
+                        </label>
+                        <input 
+                            id="username"
+                            type="text" 
+                            placeholder="ユーザー名を入力" 
+                            value={formData.username}
+                            className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                            onChange={(e) => handleInputChange("username", e.target.value)}
+                        />
+                    </div>
+
+                    <div>
+                        <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+                            パスワード
+                        </label>
+                        <input 
+                            id="password"
+                            type="password"
+                            placeholder="パスワード（8文字以上）を入力" 
+                            value={formData.password}
+                            onChange={(e) => handleInputChange("password", e.target.value)}
+                            className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                        />
+                    </div>
+
+                    <button 
+                        type="submit"
+                        className="w-full bg-blue-500 text-white py-3 px-4 rounded-md font-medium hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors duration-200"
+                    >
+                        登録
+                    </button>
                 </form>
+
+                <div className="mt-6 text-center">
+                    <Link 
+                        to="/login" 
+                        className="text-blue-500 hover:text-blue-600 text-sm font-medium transition-colors"
+                    >
+                        ← ログイン画面に戻る
+                    </Link>
+                </div>
             </div>
-            </div>
-            <Link to="/login" className="flex items-center space-x-2 justify-center">
-            <div className="block text-sm font-medium text-gray-700 mb-2 hover:text-blue-800">◀ログイン画面に戻る</div>
-            </Link>
         </div>
     );
 }
