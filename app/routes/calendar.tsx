@@ -327,7 +327,6 @@ const sanitizeTasks = (tasks: any[]): Task[] => {
   return () => observer.disconnect();
 }, [filteredTasks]); // filteredTasks が変わったら初回置換を再実行
 
-
 //ガントチャート描画
   const ganttComponent = useMemo(()=>{
       const safeFilteredTasks = sanitizeTasks(filteredTasks);
@@ -335,12 +334,17 @@ const sanitizeTasks = (tasks: any[]): Task[] => {
         return <div>タスクがありません</div>
       }
     return (
-      <Gantt tasks={safeFilteredTasks}
-      viewMode={ViewMode.Day}
-      TooltipContent={CustomToolTip}
-      columnWidth={60}
-      listCellWidth="155px"/>);
+      <div className="overflow-x-auto touch-pan-x">
+        <Gantt tasks={safeFilteredTasks}
+        viewMode={ViewMode.Day}
+        TooltipContent={CustomToolTip}
+        columnWidth={50}
+        listCellWidth="130px"/>
+      </div>
+    );
     }, [filteredTasks]);
+
+
 
   return (
     <div className="flex flex-col h-screen bg-green-50">
