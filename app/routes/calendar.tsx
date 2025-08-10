@@ -131,7 +131,16 @@ export function meta({}: Route.MetaArgs) {
   //期間の日付表示をカスタム
   const CustomToolTip = ({task}: {task: Task})=>{
     return (
-      <div className="p-2 text-sm">
+      <div className="p-2 text-sm bg-white border border-gray-300 shadow-md rounded"
+        style={{
+          position: "fixed",
+          bottom: 80,
+          left: "50%",
+          transform: "translateX(-50%)",
+          zIndex: 9999,
+          whiteSpace: "nowrap",
+          maxWidth: "90Vw",
+        }}>
         <p><strong>{task.name}</strong></p>
         <p>開始: {formatDateYYMMDD(task.start)}</p>
         <p>期限: {formatDateYYMMDD(task.end)}</p>
